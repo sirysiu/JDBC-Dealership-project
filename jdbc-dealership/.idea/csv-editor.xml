@@ -10,6 +10,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/src/main/resources/contractBackup.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="|" />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/src/main/resources/contracts.csv">
           <value>
             <Attribute>

@@ -1,28 +1,35 @@
 package com.pluralsight.car;
 
+import com.pluralsight.car.dao.VehicleDAOMysqlImpl;
 import com.pluralsight.car.models.Contract;
 import com.pluralsight.car.models.Dealership;
 import com.pluralsight.car.models.LeaseContract;
 import com.pluralsight.car.models.Vehicle;
+import com.pluralsight.car.styles.ColorCodes;
+
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 public class UserInterface {
 
   private Dealership dealership;
   Scanner scanner = new Scanner(System.in);
+  private VehicleDAOMysqlImpl vehicleDAOMysql;  // Declare the VehicleDAOMysqlImpl object
+  private BasicDataSource dataSource;
 
-  public UserInterface() {
+  public UserInterface(BasicDataSource dataSource) {
+    this.dataSource = dataSource;
+    this.vehicleDAOMysql = new VehicleDAOMysqlImpl(dataSource);
+
   }
 
-  private void init() {
-    this.dealership = new DealershipFileManger().getDealership();
-  }
 
   public void display() {
-    init();
+
     boolean isRunning = true;
     while (isRunning) {
       menus();
@@ -47,7 +54,8 @@ public class UserInterface {
           processGetByType();
           break;
         case "7":
-          processAllVehiclesRequest();
+         processAllVehiclesRequest();
+
           break;
         case "8":
           processAddVehicleRequest();
@@ -107,172 +115,182 @@ public class UserInterface {
   }
 
   private void processGetByPriceRequest() {
+    // Get minimum price from the user
     System.out.print("Enter the minimum price: ");
-    double minPrice = scanner.nextDouble(); // Get user input for minimum price
-    scanner.nextLine(); // Consume the newline character
+    double minPrice;
+    while (true) {
+      try {
+        minPrice = Double.parseDouble(scanner.nextLine().trim()); // Get user input for minimum price
+        break;  // Exit loop if parsing is successful
+      } catch (NumberFormatException e) {
+        System.out.println("Invalid input. Please enter a valid number for minimum price.");
+        System.out.print("Enter the minimum price: ");
+      }
+    }
 
+    // Get maximum price from the user
     System.out.print("Enter the maximum price: ");
-    double maxPrice = scanner.nextDouble(); // Get user input for maximum price
-    scanner.nextLine(); // Consume the newline character
+    double maxPrice;
+    while (true) {
+      try {
+        maxPrice = Double.parseDouble(scanner.nextLine().trim()); // Get user input for maximum price
+        break;  // Exit loop if parsing is successful
+      } catch (NumberFormatException e) {
+        System.out.println("Invalid input. Please enter a valid number for maximum price.");
+        System.out.print("Enter the maximum price: ");
+      }
+    }
 
-    ArrayList<Vehicle> vehiclesByPrice = dealership.getVehiclesByPrice(minPrice, maxPrice);
-    displayVehicles(vehiclesByPrice); // Use the display method to print vehicles
+    // Retrieve vehicles within the specified price range
+    List<Vehicle> vehiclesByPrice = vehicleDAOMysql.findVehicleByPriceRange(minPrice, maxPrice);
+
+    // If no vehicles were found, display a message
+    if (vehiclesByPrice.isEmpty()) {
+      System.out.println("No vehicles found in the specified price range.");
+    } else {
+      // Convert List to ArrayList before passing to displayVehicles if needed
+      displayVehicles(new ArrayList<>(vehiclesByPrice)); // Use the display method to print vehicles
+    }
   }
+
+
 
 
   public void processAllVehiclesRequest() {
+    // Configure the BasicDataSource with the correct DB connection info
 
-    displayVehicles(dealership.getInventory());
+    // Create an instance of VehicleDAOMysqlImpl with the configured data source
+    VehicleDAOMysqlImpl vehicleDAOMysql = new VehicleDAOMysqlImpl(dataSource);
+
+    // Retrieve all vehicles from the database
+    List<Vehicle> vehicles = vehicleDAOMysql.findAllVehicles();
+
+    // Convert List to ArrayList before passing to displayVehicles
+    displayVehicles(new ArrayList<>(vehicles));
+
+    // Print the make and model of each vehicle
+    vehicles.forEach(vehicle -> System.out.println(vehicle.getMake() + " " + vehicle.getModel()));
   }
-
   private void processGetByMakeModelRequest() {
+    // Prompt user for make and model
     System.out.print("Enter the make of the vehicle: ");
-    String make = scanner.nextLine().trim(); // Get user input for make
+    String make = scanner.nextLine().trim();  // Get user input for make
 
     System.out.print("Enter the model of the vehicle: ");
     String model = scanner.nextLine().trim(); // Get user input for model
 
-    ArrayList<Vehicle> vehiclesByMakeModel = dealership.getVehiclesByMakeModel(make, model);
-    displayVehicles(vehiclesByMakeModel); // Use the display method to print vehicles
+    // Create an instance of VehicleDAOMysqlImpl with the configured data source
+    VehicleDAOMysqlImpl vehicleDAOMysql = new VehicleDAOMysqlImpl(dataSource);
+
+    // Retrieve vehicles based on make and model from the database
+    List<Vehicle> vehicles = vehicleDAOMysql.findVehicleByMakeAndModel(make, model);
+
+    // Convert List to ArrayList before passing to displayVehicles
+    displayVehicles(new ArrayList<>(vehicles));
+
+    // Print the make and model of each vehicle (this line is optional if you're displaying the vehicles already)
+    vehicles.forEach(vehicle -> System.out.println(vehicle.getMake() + " " + vehicle.getModel()));
   }
+
 
   private void processGetByYearRequest() {
     System.out.print("Enter the year of the vehicle: ");
-    int year = scanner.nextInt(); // Get user input for year
-    scanner.nextLine(); // Consume the newline character
+    int year = scanner.nextInt();  // Get user input for the year
+    scanner.nextLine();  // Consume the newline character
 
-    ArrayList<Vehicle> vehiclesByYear = dealership.getVehiclesByYear(year);
-    displayVehicles(vehiclesByYear); // Use the display method to print vehicles
+    // Call the DAO method to get vehicles by year
+    List<Vehicle> vehiclesByYear = vehicleDAOMysql.findVehicleByYear(year);
+
+    // Display the retrieved vehicles
+    displayVehicles(new ArrayList<>(vehiclesByYear));  // Convert List to ArrayList if needed
   }
-
   private void processGetByColor() {
     System.out.print("Enter the color of the vehicle: ");
-    String color = scanner.nextLine().trim(); // Get user input for color
+    String color = scanner.nextLine().trim();  // Get user input for color
 
-    ArrayList<Vehicle> vehiclesByColor = dealership.getVehiclesByColor(color);
-    displayVehicles(vehiclesByColor); // Use the display method to print vehicles
+    // Call the DAO method to get vehicles by color
+    List<Vehicle> vehiclesByColor = vehicleDAOMysql.findVehicleByColor(color);
+
+    // If no vehicles were found, display a message
+    if (vehiclesByColor.isEmpty()) {
+      System.out.println("No vehicles found for color: " + color);
+    } else {
+      // Convert List to ArrayList before passing to displayVehicles if needed
+      displayVehicles(new ArrayList<>(vehiclesByColor));
+    }
   }
 
-  private void processGetByMileageRequest() {
-    System.out.print("Enter the maximum mileage of the vehicle: ");
-    int maxMileage = scanner.nextInt(); // Get user input for maximum mileage
-    scanner.nextLine(); // Consume the newline character
 
-    ArrayList<Vehicle> vehiclesByMileage = dealership.getVehiclesByMileage(maxMileage);
-    displayVehicles(vehiclesByMileage); // Use the display method to print vehicles
+  private void processGetByMileageRequest() {
+    // Prompt the user for the maximum mileage
+    System.out.print("Enter the maximum mileage of the vehicle: ");
+    int maxMileage;
+    while (true) {
+      try {
+        maxMileage = Integer.parseInt(scanner.nextLine().trim()); // Get user input for maximum mileage
+        break;  // Exit loop if parsing is successful
+      } catch (NumberFormatException e) {
+        System.out.println("Invalid input. Please enter a valid number for maximum mileage.");
+        System.out.print("Enter the maximum mileage of the vehicle: ");
+      }
+    }
+
+    // Retrieve vehicles with mileage less than or equal to the specified maxMileage
+    List<Vehicle> vehiclesByMileage = vehicleDAOMysql.findVehicleByMileage(maxMileage);
+
+    // If no vehicles were found, display a message
+    if (vehiclesByMileage.isEmpty()) {
+      System.out.println("No vehicles found with the specified mileage.");
+    } else {
+      // Convert List to ArrayList before passing to displayVehicles if needed
+      displayVehicles(new ArrayList<>(vehiclesByMileage));  // Use the display method to print vehicles
+    }
   }
 
   private void processGetByType() {
     System.out.print("Enter the type of the vehicle: ");
-    String type = scanner.nextLine().trim(); // Get user input for vehicle type
+    String type = scanner.nextLine().trim();  // Get user input for vehicle type
 
-    ArrayList<Vehicle> vehiclesByType = dealership.getVehiclesByType(type);
-    displayVehicles(vehiclesByType); // Use the display method to print vehicles
+    try {
+      // Assuming dealership.getVehiclesByType(type) calls the corresponding DAO method
+      ArrayList<Vehicle> vehiclesByType = dealership.getVehiclesByType(type);
+      displayVehicles(vehiclesByType);  // Use the display method to print vehicles
+    } catch (Exception e) {
+      System.out.println("An error occurred while retrieving vehicles by type: " + e.getMessage());
+    }
   }
 
+
   private void processAddVehicleRequest() {
-    Scanner scanner = new Scanner(System.in);
 
-    System.out.print("Enter VIN: ");
-    int vin = scanner.nextInt();
-    scanner.nextLine(); // Consume the newline character
-
-    System.out.print("Enter Year: ");
-    int year = scanner.nextInt();
-    scanner.nextLine(); // Consume the newline character
-
-    System.out.print("Enter Make: ");
-    String make = scanner.nextLine();
-
-    System.out.print("Enter Model: ");
-    String model = scanner.nextLine();
-
-    System.out.print("Enter Type: ");
-    String type = scanner.nextLine();
-
-    System.out.print("Enter Color: ");
-    String color = scanner.nextLine();
-
-    System.out.print("Enter Mileage: ");
-    int mileage = scanner.nextInt();
-    scanner.nextLine(); // Consume the newline character
-
-    System.out.print("Enter Price: ");
-    double price = scanner.nextDouble();
-    scanner.nextLine(); // Consume the newline character
-
-    // Create a new Vehicle object
-    Vehicle newVehicle = new Vehicle(vin, year, make, model, type, color, mileage, price);
-
-    // Add the new vehicle to the dealership's inventory
-    dealership.addVehicle(newVehicle);
-
-    new DealershipFileManger().saveDealership(dealership);
-
-    System.out.println("Vehicle added successfully!");
   }
 
   private void processRemoveVehicleRequest() {
     System.out.print("Enter the VIN of the vehicle to remove: ");
-    int vin = scanner.nextInt(); // Get user input for VIN
-    scanner.nextLine(); // Consume the newline character
+    String vinInput = scanner.nextLine();  // Read the VIN as a string
 
-    boolean removed = dealership.removeVehicle(vin);
+    try {
+      // Convert the VIN string to an integer
+      int vin = Integer.parseInt(vinInput);
 
-    new DealershipFileManger().saveDealership(dealership);
+      // Call the removeVehicle method from the Dealership class
+      boolean removed = dealership.removeVehicle(vin);  // Pass the VIN as an integer
 
-    if (removed) {
-      System.out.println("Vehicle removed successfully!");
-    } else {
-      System.out.println("Vehicle with VIN " + vin + " not found.");
+      // Provide feedback to the user
+      if (removed) {
+        System.out.println("Vehicle with VIN " + vin + " removed successfully!");
+      } else {
+        System.out.println("Vehicle with VIN " + vin + " not found.");
+      }
+    } catch (NumberFormatException e) {
+      System.out.println("Invalid VIN format. VIN must be a numeric value.");
     }
   }
 
+
+
   public void processSellOrLeaseVehicleRequest() {
-    System.out.println("Enter the Vin number of vehicle: ");
-    int vin = scanner.nextInt();
-    scanner.nextLine();
 
-    String date = LocalDate.now().toString();
-
-    System.out.println("Enter Name: ");
-    String customerName = scanner.nextLine();
-
-    System.out.println("Enter Email: ");
-    String email = scanner.nextLine();
-
-    System.out.println("Lease or Sale? ");
-    String customerContract = scanner.nextLine();
-
-    // Check if input is neither lease nor sale
-    if (!customerContract.equalsIgnoreCase("lease") && !customerContract.equalsIgnoreCase("sale")) {
-      System.out.println("Invalid option. Please enter 'lease' or 'sale'.");
-      return;
-    }
-
-    Vehicle v = dealership.getInventory().stream()
-            .filter(vehicle -> vehicle.getVin() == vin)
-            .findFirst()
-            .orElse(null);
-
-    if (v == null) {
-      System.out.println("Vehicle not found.");
-      return;
-    }
-
-    double processingFee = v.getPrice() < 10000 ? 295 : 495;
-    System.out.println("Would you like to finance your vehicle? ");
-    String yesOrNo = scanner.nextLine();
-    boolean isFinance = yesOrNo.equalsIgnoreCase("yes");
-
-    Contract contract;
-    if (customerContract.equalsIgnoreCase("lease")) {
-      contract = new LeaseContract(date, customerName, email, v);
-    } else {
-      return;
-    }
-
-    new ContractDataManager().saveContract(contract);
   }
 
 

@@ -1,4 +1,4 @@
-package com.pluralsight.car;
+package com.pluralsight.car.styles;
 
 public class Symbols
 {
