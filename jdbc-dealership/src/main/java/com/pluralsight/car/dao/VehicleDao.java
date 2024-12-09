@@ -15,7 +15,8 @@ public interface VehicleDao {
     List<Vehicle> findAllVehicles();
 
     boolean removeVehicle(int vin);  // Changed return type to boolean
-    List<Vehicle> addVehicle();
 
 
+
+    void addVehicle(Vehicle vehicle);
 }

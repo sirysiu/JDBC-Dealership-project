@@ -263,10 +263,47 @@ public class UserInterface {
 
 
   private void processAddVehicleRequest() {
+    // Prompt the user for vehicle details
+    System.out.print("Enter VIN: ");
+    int vin = Integer.parseInt(scanner.nextLine().trim());  // VIN should be an integer
 
+    System.out.print("Enter Year: ");
+    int year = Integer.parseInt(scanner.nextLine().trim());
+
+    System.out.print("Enter Make: ");
+    String make = scanner.nextLine().trim();
+
+    System.out.print("Enter Model: ");
+    String model = scanner.nextLine().trim();
+
+    System.out.print("Enter Type (e.g., Sedan, SUV, Coupe): ");
+    String type = scanner.nextLine().trim();
+
+    System.out.print("Enter Color: ");
+    String color = scanner.nextLine().trim();
+
+    System.out.print("Enter Mileage: ");
+    int mileage = Integer.parseInt(scanner.nextLine().trim());
+
+    System.out.print("Enter Price: ");
+    double price = Double.parseDouble(scanner.nextLine().trim());
+
+    System.out.print("Is the vehicle sold (true/false)? ");
+    boolean sold = Boolean.parseBoolean(scanner.nextLine().trim());
+
+    // Create a new Vehicle object using the input values
+    Vehicle vehicle = new Vehicle(vin, year, make, model, type, color, mileage, price, sold);
+
+    // Add the vehicle to the database
+    vehicleDAOMysql.addVehicle(vehicle);
+
+    // Provide feedback to the user
+    System.out.println("Vehicle added successfully!");
   }
 
+
   private void processRemoveVehicleRequest() {
+    // Prompt the user to enter the VIN of the vehicle to remove
     System.out.print("Enter the VIN of the vehicle to remove: ");
     String vinInput = scanner.nextLine();  // Read the VIN as a string
 
@@ -274,19 +311,21 @@ public class UserInterface {
       // Convert the VIN string to an integer
       int vin = Integer.parseInt(vinInput);
 
-      // Call the removeVehicle method from the Dealership class
-      boolean removed = dealership.removeVehicle(vin);  // Pass the VIN as an integer
+      // Call the removeVehicle method from the Vehicle DAO or Dealership class
+      boolean removed = vehicleDAOMysql.removeVehicle(vin);  // Replace vehicleDAOMysql with your DAO
 
-      // Provide feedback to the user
+      // Provide feedback to the user based on whether the removal was successful
       if (removed) {
         System.out.println("Vehicle with VIN " + vin + " removed successfully!");
       } else {
-        System.out.println("Vehicle with VIN " + vin + " not found.");
+        System.out.println("Vehicle with VIN " + vin + " not found or could not be removed.");
       }
 
     } catch (NumberFormatException e) {
+      // Handle invalid input (e.g., if the user doesn't enter a valid number for VIN)
       System.out.println("Invalid VIN format. VIN must be a numeric value.");
     } catch (Exception e) {
+      // Handle any other exceptions (e.g., database connection issues)
       System.out.println("An error occurred while removing the vehicle: " + e.getMessage());
     }
   }
