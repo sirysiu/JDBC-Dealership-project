@@ -24,6 +24,7 @@ public class UserInterface {
   public UserInterface(BasicDataSource dataSource) {
     this.dataSource = dataSource;
     this.vehicleDAOMysql = new VehicleDAOMysqlImpl(dataSource);
+    this.dealership = new Dealership();
 
   }
 
@@ -282,10 +283,14 @@ public class UserInterface {
       } else {
         System.out.println("Vehicle with VIN " + vin + " not found.");
       }
+
     } catch (NumberFormatException e) {
       System.out.println("Invalid VIN format. VIN must be a numeric value.");
+    } catch (Exception e) {
+      System.out.println("An error occurred while removing the vehicle: " + e.getMessage());
     }
   }
+
 
 
 

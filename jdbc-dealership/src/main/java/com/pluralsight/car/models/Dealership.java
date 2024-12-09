@@ -5,12 +5,12 @@ import java.util.stream.Collectors;
 
 
 public class Dealership {
-    private final String name;
-    private final String address;
-    private final String phone;
+    private  String name = "";
+    private  String address;
+    private  String phone;
     private final ArrayList<Vehicle> inventory;
 
-    public Dealership(String name, String address, String phone) {
+    public Dealership() {
         this.name = name;
         this.address = address;
         this.phone = phone;

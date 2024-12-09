@@ -1,4 +1,10 @@
 package com.pluralsight.car.dao;
 
-public class LeaseDao {
+import com.pluralsight.car.models.LeaseContract;
+
+import java.util.List;
+
+public interface LeaseDao {
+    List<LeaseContract> findAllLeaseContracts();
+
 }
